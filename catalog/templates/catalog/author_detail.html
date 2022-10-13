@@ -1,0 +1,43 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<h1>Author: {{ author.first_name }} {{ author.last_name }}</h1>
+
+<p><strong>Lastname:</strong> {{ author.last_name }}</p>
+<p><strong>Firstname:</strong> {{ author.first_name }}</p>
+<p><strong>Date of birth:</strong> {{ author.date_of_birth }}</p>
+<p><strong>Date of death:</strong> {{ author.date_of_death }}</p>
+<p><strong>Number of book from this author:</strong> {{ author.book_set.count }}</p>
+
+<div style="margin-left:20px;margin-top:20px">
+    <h4>List of books from this author</h4>
+
+
+    <div class="row">
+        <table id="Table" class="table table-striped mt-5">
+            <thead>
+            <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Summary</th>
+                <th scope="col">ISBN</th>
+                <th scope="col">Language</th>
+                <th scope="col">Genre</th>
+                <th scope="col">Nb of books available</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for author_copy in author.book_set.all %}
+            <tr>
+                <td><a href=" {{ author_copy.get_absolute_url }} ">{{ author_copy.title }}</a></td>
+                <td>{{ author_copy.summary|truncatechars:40 }}</td>
+                <td>{{ author_copy.isbn }}</td>
+                <td>{{ author_copy.language }}</td>
+                <td>{{ author_copy.genre.all|join:", " }}</td>
+                <td>{{ author_copy.get_available_count }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    {% endblock %}

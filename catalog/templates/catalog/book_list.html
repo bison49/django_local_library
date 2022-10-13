@@ -1,0 +1,30 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<h1>Book List</h1>
+<form action="" method="get">
+    {% csrf_token %}
+    <table>
+        {{ form.as_table }}
+    </table>
+    <input type="submit" value="Search"/>
+</form>
+{{ datap }}
+{% if book_list %}
+<ul>
+    {% for book in book_list %}
+    <li>
+        <a href="{{ book.get_absolute_url }}">{{ book.title }}</a> ({{book.author}})
+        {% if perms.catalog.can_change_author %}
+        <a href="{% url 'book-update' book.id %}">Modification book</a>
+        {% if book.bookinstance_set.all|length == 0 %}
+        <a href="{% url 'book-delete' book.id %}">delete book</a>
+        {% endif %}
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>There are no books in the library.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base_generic.html" %}
+
+{% load static %}
+{% block stylesheet %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}"> {% endblock%}
+
+
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+    <table>
+        {{ form.non_field_errors }}
+        <div class="fieldWrapper">
+            {{ form.first_name.label_tag }}
+            {{ form.first_name }}
+            {% if form.first_name.errors %}
+            <ul>
+                {% for error in form.first_name.errors %}
+                <li style="color: darkred"><strong>{{ error|escape }}</strong></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        <div class="fieldWrapper">
+            {{ form.last_name.label_tag }}
+            {{ form.last_name }}
+            {{ form.last_name.errors }}
+        </div>
+        <div class="fieldWrapper">
+            {{ form.date_of_birth.label_tag }}
+            {{ form.date_of_birth }}
+            {{ form.date_of_birth.errors }}
+        </div>
+        <div class="fieldWrapper">
+            {{ form.date_of_death.label_tag }}
+            {{ form.date_of_death }}
+            {{ form.date_of_death.errors }}
+        </div>
+
+    </table>
+    <input type="submit" value="Submit"/>
+</form>
+{% endblock %}
