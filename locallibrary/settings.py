@@ -33,12 +33,14 @@ SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
 # ALLOWED_HOSTS = os.environ.get('SERVERNAMES', ).split(' ')
-ALLOWED_HOSTS = ['calm-scrubland-99932.herokuapp.com', '127.0.0.1']
+ALLOWED_HOSTS = ['.calm-scrubland-99932.herokuapp.com']
 
 # Enlever les commentaires pour la mise prod et mettre les valeurs à True
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
 CSRF_COOKIE_SECURE = True
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_SECONDS = 810000
 SECURE_HSTS_PRELOAD = True
 
