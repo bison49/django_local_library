@@ -6,7 +6,7 @@
 <p><strong>Lastname:</strong> {{ author.last_name }}</p>
 <p><strong>Firstname:</strong> {{ author.first_name }}</p>
 <p><strong>Date of birth:</strong> {{ author.date_of_birth }}</p>
-<p><strong>Date of death:</strong> {{ author.date_of_death }}</p>
+<p><strong>Date of death:</strong> {% if author.date_of_death%} {{ author.date_of_death }} {% endif %}</p>
 <p><strong>Number of book from this author:</strong> {{ author.book_set.count }}</p>
 
 <div style="margin-left:20px;margin-top:20px">
@@ -22,7 +22,7 @@
                 <th scope="col">ISBN</th>
                 <th scope="col">Language</th>
                 <th scope="col">Genre</th>
-                <th scope="col">Nb of books available</th>
+                <th scope="col">Nb of copies available</th>
             </tr>
             </thead>
             <tbody>
@@ -33,7 +33,7 @@
                 <td>{{ author_copy.isbn }}</td>
                 <td>{{ author_copy.language }}</td>
                 <td>{{ author_copy.genre.all|join:", " }}</td>
-                <td>{{ author_copy.get_available_count }}</td>
+                <td>{{ author_copy.get_available_count }} / {{ author_copy.bookinstance_set.count }}</td>
             </tr>
             {% endfor %}
             </tbody>

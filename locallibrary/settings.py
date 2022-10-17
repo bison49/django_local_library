@@ -35,11 +35,12 @@ DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 # ALLOWED_HOSTS = os.environ.get('SERVERNAMES', ).split(' ')
 ALLOWED_HOSTS = ['floating-inlet-76872.herokuapp.com', '127.0.0.1']
 
-# Enlever les commentaires pour la mise prod
+# Enlever les commentaires pour la mise prod et mettre les valeurs à True
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 10000
+SECURE_HSTS_SECONDS = 810000
+SECURE_HSTS_PRELOAD = True
 
 # Application definition
 
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'catalog.apps.CatalogConfig',
     'crispy_forms',
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
@@ -133,7 +135,11 @@ USE_TZ = True
 # The absolute path to the directory where collectstatic will collect static files for deployment.
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+# config/settings.py
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -152,4 +158,3 @@ DATABASES['default'].update(db_from_env)
 # Simplified static file serving.
 # https://pypi.org/project/whitenoise/
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-

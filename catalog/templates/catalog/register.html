@@ -1,10 +1,12 @@
 {% extends "base_generic.html" %}
 
-{% load static %}
-
+{% block title %}<title>Formulaire d'inscription d'un utilisateur</title>{% endblock %}
 
 {% block content %}
-<h1>Add author</h1>
+
+
+<h1>Register Here</h1>
+
 <form method="post">
   {% csrf_token %}
   {% for field in form %}
@@ -19,6 +21,8 @@
       {% endfor %}
     </p>
   {% endfor %}
-  <button type="submit">Add author</button>
+  <button type="submit">Sign up</button>
 </form>
+
+
 {% endblock %}

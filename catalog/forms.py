@@ -1,5 +1,10 @@
+import re
+
 from django import forms
 import datetime
+
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from .models import Book, BookInstance, Author, Genre, Language
@@ -23,6 +28,16 @@ class RenewBookForm(forms.Form):
         return data
 
 
+class BookCreateForm(forms.ModelForm):
+
+    class Meta:
+        model = Book
+        fields = ['title', 'author', 'summary', 'isbn', 'genre', 'language', 'book_cover']
+        labels = {
+            'book_cover': "Upload an image to display for the book"
+        }
+
+
 class BookInstanceUpdateForm(forms.ModelForm):
     imprint = forms.CharField(disabled=True)
 
@@ -39,9 +54,35 @@ class BookInstanceUpdateForm(forms.ModelForm):
 class BookFilterForm(forms.ModelForm):
     title = forms.CharField(required=False)
     author = forms.ModelChoiceField(queryset=Author.objects.all(), required=False)
-    genre = forms.ModelMultipleChoiceField(queryset=Genre.objects.all(), widget=forms.CheckboxSelectMultiple, required=False)
+    genre = forms.ModelMultipleChoiceField(queryset=Genre.objects.all(), widget=forms.CheckboxSelectMultiple,
+                                           required=False)
     language = forms.ModelChoiceField(queryset=Language.objects.all(), required=False)
 
     class Meta:
         model = Book
         fields = ['title', 'author', 'language', 'genre']
+
+
+class SignUpForm(UserCreationForm):
+    first_name = forms.CharField(max_length=100)
+    last_name = forms.CharField(max_length=100)
+    email = forms.EmailField(max_length=150)
+
+    class Meta:
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2',)
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email=email).exists():
+            raise ValidationError(_("Email already exists"))
+        return email
+
+    #
+    # def clean_password2(self):
+    #     password1 = self.cleaned_data['password1']
+    #     password2 = self.cleaned_data['password2']
+    #
+    #     if password1 and password2 and password1 != password2:
+    #         raise ValidationError(_("Password don't match"))
+    #     return password2

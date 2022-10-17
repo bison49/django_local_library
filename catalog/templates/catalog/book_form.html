@@ -1,11 +1,21 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <form action="" method="post">
+<h1>Add a book</h1>
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <table>
-    {{ form.as_table }}
-    </table>
-    <input type="submit" value="Submit" />
-  </form>
+    {% for field in form %}
+    <p>
+        {{ field.label_tag }}<br>
+        {{ field }}
+        {% if field.help_text %}
+        <small style="color: grey">{{ field.help_text|safe }}</small>
+        {% endif %}
+        {% for error in field.errors %}
+    <p style="color: red">{{ error }}</p>
+    {% endfor %}
+    </p>
+    {% endfor %}
+    <button type="submit">Add book</button>
+</form>
 {% endblock %}

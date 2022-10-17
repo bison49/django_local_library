@@ -3,6 +3,9 @@
 {% block content %}
 <h1>Title: {{ book.title }}</h1>
 
+{% if book.book_cover %}
+<img src="{{ book.book_cover.url}}" loading="lazy" alt='Couverture du livre "{{ book.title}}" écrit par {{ book.author.first_name|capfirst }} {{ book.author.last_name|capfirst }}'>
+{% endif %}
 <p><strong>Author:</strong> <a href="{{ book.author.get_absolute_url }}">{{ book.author }}</a>
 </p> <!-- author detail link not yet defined -->
 <p><strong>Summary:</strong> {{ book.summary }}</p>

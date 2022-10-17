@@ -1,18 +1,24 @@
 import datetime
 
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.models import User
+from django.contrib.sites.shortcuts import get_current_site
 from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.views import generic
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DeleteView, UpdateView, CreateView
 
-from catalog.forms import BookFilterForm, BookInstanceUpdateForm, RenewBookForm
+from catalog.forms import BookFilterForm, BookInstanceUpdateForm, RenewBookForm, SignUpForm, BookCreateForm
 from catalog.models import Author, Book, BookInstance, Genre
+from catalog.tokens.tokens import account_activation_token
 
 
 def index(request):
@@ -72,7 +78,8 @@ class AuthorCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Author
     permission_required = 'catalog.can_change_author'
     fields = ['first_name', 'last_name', 'date_of_birth', 'date_of_death']
-    initial = {'date_of_death': '11/06/2020'}
+
+    # initial = {'date_of_death': '11/06/2020'}
 
     # Ajout d'un message sur une class based view
     def form_valid(self, form):
@@ -124,20 +131,24 @@ class BookDetailView(generic.DetailView):
     model = Book
 
 
-class BookCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
-    model = Book
-    permission_required = 'catalog.can_change_author'
-    fields = ['title', 'author', 'summary', 'isbn', 'genre', 'language']
-    success_url = reverse_lazy('bookinstance-create')
+@login_required
+@permission_required('catalog.can_change_author', raise_exception=True)
+def BookCreate(request):
+    if request.method == 'POST':
+        form = BookCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+        return HttpResponseRedirect(reverse('books'))
+    else:
+        form = BookCreateForm()
 
-    def get_success_url(self):
-        return reverse_lazy('bookinstance-create', args=[self.object.id])
+    return render(request, 'catalog/book_form.html', {'form': form})
 
 
 class BookUpdate(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Book
     permission_required = 'catalog.can_change_author'
-    fields = ['title', 'author', 'summary', 'isbn', 'genre', 'language']
+    form_class = BookCreateForm
 
 
 class BookDelete(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -206,6 +217,12 @@ class BookInstanceUpdate(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
     form_class = BookInstanceUpdateForm
     success_url = reverse_lazy('books')
 
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'update'
+        return context
+
 
 class BookInstanceDelete(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = BookInstance
@@ -219,16 +236,76 @@ class BookInstanceCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView
     permission_required = 'catalog.can_change_author'
     success_url = reverse_lazy('book-detail')
 
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'add'
+        return context
+
     def get_initial(self):
         initial = super().get_initial()
-        initial['book'] = Book.objects.get(pk=self.kwargs['id'])
+        initial['book'] = Book.objects.get(pk=self.kwargs['id']) if self.kwargs.__len__() != 0 else ''
         return initial.copy()
 
     def get_success_url(self):
-        return reverse_lazy('book-detail', args=[self.kwargs['id']])
+        add_copy = self.request.POST.get('add_copy', None)
+        if add_copy is not None:
+            return reverse_lazy('bookinstance-create')
+        else:
+            return reverse_lazy('book-detail', args=[self.object.book.pk])
 
-    # def get_context_data(self, **kwargs):
-    #     # Call the base implementation first to get a context
-    #     context = super().get_context_data(**kwargs)
-    #     context['bookid'] = Book.objects.get(pk=self.kwargs['id'])
-    #     return context
+
+def register(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            user.refresh_from_db()
+            user.profile.first_name = form.cleaned_data.get('first_name')
+            user.profile.last_name = form.cleaned_data.get('last_name')
+            user.profile.email = form.cleaned_data.get('email')
+            # user can't login until link confirmed
+            user.is_active = False
+            user.save()
+            current_site = get_current_site(request)
+            subject = 'Please Activate Your Account'
+            # load a template like get_template()
+            # and calls its render() method immediately.
+            message = render_to_string('catalog/activation_request.html', {
+                'user': user,
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                # method will generate a hash value with user related data
+                'token': account_activation_token.make_token(user),
+            })
+            user.email_user(subject, message)
+            return redirect('activation_sent')
+    else:
+        form = SignUpForm()
+    return render(request, 'catalog/register.html', {'form': form})
+
+
+def activation_sent_view(request):
+    return render(request, 'catalog/activation_sent.html')
+
+
+def activate(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    # checking if the user exists, if the token is valid.
+    if user is not None and account_activation_token.check_token(user, token):
+        # if valid set active true
+        user.is_active = True
+        # user.is_superuser = True
+        # user.is_staff = True
+        # set signup_confirmation true
+        user.profile.signup_confirmation = True
+        user.save()
+        messages.add_message(request, messages.SUCCESS, 'Vous êtes enregistré vous pouvez maintenant vous connecter')
+        # login(request, user)
+        return redirect('login')
+    else:
+        return render(request, 'catalog/activation_invalid.html')
